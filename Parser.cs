@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Windows.Documents;
 
 namespace SEClient
 {
@@ -72,6 +73,18 @@ namespace SEClient
                     {
                         _sample.GazeDirectionQuality = double.Parse(line[GAZE_DIRECTION_QUALITY.Length..]);
                     }
+                    else if (line.StartsWith(LEFT))
+                    {
+                        ProcessEyeFeature(Eye.Left, line[LEFT.Length..]);
+                    }
+                    else if (line.StartsWith(RIGHT))
+                    {
+                        ProcessEyeFeature(Eye.Right, line[RIGHT.Length..]);
+                    }
+                    else if (line.StartsWith(PUPIL_DIAMETER))
+                    {
+                        _sample.GazeDirectionQuality = double.Parse(line[PUPIL_DIAMETER.Length..]);
+                    }
                     else if (line.StartsWith(_intersectionSource))
                     {
                         _state = State.Intersections;
@@ -138,6 +151,10 @@ namespace SEClient
         readonly string FRAME_NUMBER = "FrameNumber";
         readonly string TIME_STAMP = "TimeStamp";
         readonly string GAZE_DIRECTION_QUALITY = "GazeDirectionQ";
+        readonly string LEFT = "Left";
+        readonly string RIGHT = "Right";
+        readonly string PUPIL_DIAMETER = "PupilDiameter";
+        readonly char QUALITY = 'Q';
         readonly string CLOSEST_WORLD_INTERSECTION = "ClosestWorldIntersection";
         readonly string FILTERED_CLOSEST_WORLD_INTERSECTION = "FilteredClosestWorldIntersection";
         readonly string ESTIMATED_CLOSEST_WORLD_INTERSECTION = "EstimatedClosestWorldIntersection";
@@ -157,9 +174,13 @@ namespace SEClient
         int _intersectionDataIndex = -1;
         Intersection _intersection = new ();    // used as a buffer; the code assumes that a copy will be create if passed somewhere else, so it must be a structure and not a class
 
-        Sample _sample = new ()  // used as a buffer; the code assumes that a copy will be create if passed somewhere else, so it must be a structure and not a class
+        Sample _sample = new()  // used as a buffer; the code assumes that a copy will be created if passed somewhere else, so it must be a structure and not a class
         {
             GazeDirectionQuality = 1.0,
+            EyeFeature = new EyeFeature[] {
+                new EyeFeature() { Size = new PupilSize() { Quality = 0.0 } },    // left
+                new EyeFeature() { Size = new PupilSize() { Quality = 0.0 } }    // right
+            },
             Intersections = new List<Intersection>()
         };
 
@@ -176,6 +197,21 @@ namespace SEClient
             if (!_activeIntersections.Contains(_intersection.PlaneName))
             {
                 PlaneEnter?.Invoke(this, _intersection);
+            }
+        }
+
+        private void ProcessEyeFeature(Eye eye, string line)
+        {
+            if (line.StartsWith(PUPIL_DIAMETER))
+            {
+                if (line[PUPIL_DIAMETER.Length] == QUALITY)
+                {
+                    _sample.EyeFeature[(int)eye].Size.Quality = double.Parse(line[(PUPIL_DIAMETER.Length + 1)..]);
+                }
+                else
+                {
+                    _sample.EyeFeature[(int)eye].Size.Diameter = double.Parse(line[PUPIL_DIAMETER.Length..]);
+                }
             }
         }
 

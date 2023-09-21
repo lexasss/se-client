@@ -76,11 +76,14 @@ namespace SEClient
 
         private void Cmd_OutputDataReceived(object sender, DataReceivedEventArgs e)
         {
-            Application.Current.Dispatcher.Invoke(() =>
+            try
             {
-                Data?.Invoke(this, e.Data ?? "");
-            });
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    Data?.Invoke(this, e.Data ?? "");
+                });
+            }
+            catch (TaskCanceledException) { }
         }
-
     }
 }
