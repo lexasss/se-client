@@ -4,6 +4,8 @@
     <TargetFramework>net6.0-windows</TargetFramework>
     <Nullable>enable</Nullable>
     <UseWPF>true</UseWPF>
+    <Authors>Oleg Spakov</Authors>
+    <Company>Tampere University</Company>
   </PropertyGroup>
 
 </Project>
