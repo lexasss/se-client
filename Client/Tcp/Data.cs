@@ -2,49 +2,49 @@
 
 namespace SEClient.Tcp;
 
-public struct SEPoint2D
+public struct Point2D
 {
     public double X;
     public double Y;
 };
 
-public struct SEVect2D
+public struct Vector2D
 {
     public double X;
     public double Y;
 };
 
-public struct SEPoint3D
-{
-    public double X;
-    public double Y;
-    public double Z;
-};
-
-public struct SEVect3D
+public struct Point3D
 {
     public double X;
     public double Y;
     public double Z;
 };
 
-public struct SEString
+public struct Vector3D
+{
+    public double X;
+    public double Y;
+    public double Z;
+};
+
+public struct String
 {
     public ushort Size;
     public char[] Ptr;
-    public readonly string String => new(Ptr);
-    public int StructSize => sizeof(ushort) + Size;
+    public readonly string AsString => new(Ptr);
+    public readonly int StructSize => sizeof(ushort) + Size;
 };
 
-public struct SEWorldIntersection
+public struct WorldIntersection
 {
-    public SEPoint3D WorldPoint;     // intersection point in world coordinates
-    public SEPoint3D ObjectPoint;    // intersection point in local object coordinates
-    public SEString ObjectName;      // name of intersected object
-    public int StructSize => 2 * Marshal.SizeOf(typeof(SEPoint3D)) + ObjectName.StructSize;
+    public Point3D WorldPoint;     // intersection point in world coordinates
+    public Point3D ObjectPoint;    // intersection point in local object coordinates
+    public String ObjectName;      // name of intersected object
+    public readonly int StructSize => 2 * Marshal.SizeOf(typeof(Point3D)) + ObjectName.StructSize;
 };
 
-public struct SEQuaternion
+public struct Quaternion
 {
     public double W;
     public double X;
@@ -52,7 +52,7 @@ public struct SEQuaternion
     public double Z;
 };
 
-public struct SEUserMarker
+public struct UserMarker
 {
     /// <summary>
     /// Equal to 0 if no error, otherwise error.
@@ -72,35 +72,7 @@ public struct SEUserMarker
     public ulong Data;
 };
 
-public struct SEPacketHeader
-{
-    /// <summary>
-    /// Always 'SEPD'
-    /// </summary>
-    public uint SyncId;
-    /// <summary>
-    /// Always 4
-    /// </summary>
-    public ushort PacketType;
-    /// <summary>
-    /// Number of bytes following this header, that is, not including size of this header
-    /// </summary>
-    public ushort Length;
-};
-
-public struct SESubPacketHeader
-{
-    /// <summary>
-    /// Output data identifier, refer to <see cref="SEOutputDataIds"/> for existing ids
-    /// </summary>
-    public SEOutputDataIds Id;
-    /// <summary>
-    /// Number of bytes following this header
-    /// </summary>
-    public ushort Length;
-};
-
-public enum SEOutputDataIds : ushort
+public enum DataId : ushort
 {
     //Frame Information
     FrameNumber = 0x0001,
@@ -348,8 +320,11 @@ public enum SEOutputDataIds : ushort
     //0x0200 - 0x0202 cannot be used
 };
 
-public record struct SEOutputData
+public record struct Data
 {
+    public ushort Size;
+    public ushort PacketCount;
+
     //Frame Information
     public uint? FrameNumber;
     public uint? EstimatedDelay;
@@ -360,36 +335,36 @@ public record struct SEOutputData
     public ushort[]? CameraRotations;
     public ulong? UserDefinedData;
     public ulong? RealTimeClock;
-    public SEString? KeyboardState;
+    public String? KeyboardState;
     public ushort? ASCIIKeyboardState;
-    public SEUserMarker? UserMarker;
+    public UserMarker? UserMarker;
     public ushort[]? CameraClocks;
 
     //Head Position
-    public SEPoint3D? HeadPosition;
+    public Point3D? HeadPosition;
     public double? HeadPositionQ;
-    public SEVect3D? HeadRotationRodrigues;
-    public SEQuaternion? HeadRotationQuaternion;
-    public SEVect3D? HeadLeftEarDirection;
-    public SEVect3D? HeadUpDirection;
-    public SEVect3D? HeadNoseDirection;
+    public Vector3D? HeadRotationRodrigues;
+    public Quaternion? HeadRotationQuaternion;
+    public Vector3D? HeadLeftEarDirection;
+    public Vector3D? HeadUpDirection;
+    public Vector3D? HeadNoseDirection;
     public double? HeadHeading;
     public double? HeadPitch;
     public double? HeadRoll;
     public double? HeadRotationQ;
 
     //Raw Gaze
-    public SEPoint3D? GazeOrigin;
-    public SEPoint3D? LeftGazeOrigin;
-    public SEPoint3D? RightGazeOrigin;
-    public SEPoint3D? EyePosition;
-    public SEVect3D? GazeDirection;
+    public Point3D? GazeOrigin;
+    public Point3D? LeftGazeOrigin;
+    public Point3D? RightGazeOrigin;
+    public Point3D? EyePosition;
+    public Vector3D? GazeDirection;
     public double? GazeDirectionQ;
-    public SEPoint3D? LeftEyePosition;
-    public SEVect3D? LeftGazeDirection;
+    public Point3D? LeftEyePosition;
+    public Vector3D? LeftGazeDirection;
     public double? LeftGazeDirectionQ;
-    public SEPoint3D? RightEyePosition;
-    public SEVect3D? RightGazeDirection;
+    public Point3D? RightEyePosition;
+    public Vector3D? RightGazeDirection;
     public double? RightGazeDirectionQ;
     public double? GazeHeading;
     public double? GazePitch;
@@ -399,11 +374,11 @@ public record struct SEOutputData
     public double? RightGazePitch;
 
     //Filtered Gaze
-    public SEVect3D? FilteredGazeDirection;
+    public Vector3D? FilteredGazeDirection;
     public double? FilteredGazeDirectionQ;
-    public SEVect3D? FilteredLeftGazeDirection;
+    public Vector3D? FilteredLeftGazeDirection;
     public double? FilteredLeftGazeDirectionQ;
-    public SEVect3D? FilteredRightGazeDirection;
+    public Vector3D? FilteredRightGazeDirection;
     public double? FilteredRightGazeDirectionQ;
     public double? FilteredGazeHeading;
     public double? FilteredGazePitch;
@@ -430,35 +405,35 @@ public record struct SEOutputData
     public double? RightBlinkOpeningSpeed;
 
     //Intersections
-    public SEWorldIntersection? ClosestWorldIntersection;
-    public SEWorldIntersection? FilteredClosestWorldIntersection;
-    public SEWorldIntersection[]? AllWorldIntersections;
-    public SEWorldIntersection[]? FilteredAllWorldIntersections;
+    public WorldIntersection? ClosestWorldIntersection;
+    public WorldIntersection? FilteredClosestWorldIntersection;
+    public WorldIntersection[]? AllWorldIntersections;
+    public WorldIntersection[]? FilteredAllWorldIntersections;
     public ushort? ZoneId;
-    public SEWorldIntersection? EstimatedClosestWorldIntersection;
-    public SEWorldIntersection[]? EstimatedAllWorldIntersections;
-    public SEWorldIntersection? HeadClosestWorldIntersection;
-    public SEWorldIntersection[]? HeadAllWorldIntersections;
-    public SEWorldIntersection? CalibrationGazeIntersection;
-    public SEWorldIntersection? TaggedGazeIntersection;
-    public SEWorldIntersection? LeftClosestWorldIntersection;
-    public SEWorldIntersection[]? LeftAllWorldIntersections;
-    public SEWorldIntersection? RightClosestWorldIntersection;
-    public SEWorldIntersection[]? RightAllWorldIntersections;
-    public SEWorldIntersection? FilteredLeftClosestWorldIntersection;
-    public SEWorldIntersection[]? FilteredLeftAllWorldIntersections;
-    public SEWorldIntersection? FilteredRightClosestWorldIntersection;
-    public SEWorldIntersection[]? FilteredRightAllWorldIntersections;
-    public SEWorldIntersection? EstimatedLeftClosestWorldIntersection;
-    public SEWorldIntersection[]? EstimatedLeftAllWorldIntersections;
-    public SEWorldIntersection? EstimatedRightClosestWorldIntersection;
-    public SEWorldIntersection[]? EstimatedRightAllWorldIntersections;
-    public SEWorldIntersection? FilteredEstimatedClosestWorldIntersection;
-    public SEWorldIntersection[]? FilteredEstimatedAllWorldIntersections;
-    public SEWorldIntersection? FilteredEstimatedLeftClosestWorldIntersection;
-    public SEWorldIntersection[]? FilteredEstimatedLeftAllWorldIntersections;
-    public SEWorldIntersection? FilteredEstimatedRightClosestWorldIntersection;
-    public SEWorldIntersection[]? FilteredEstimatedRightAllWorldIntersections;
+    public WorldIntersection? EstimatedClosestWorldIntersection;
+    public WorldIntersection[]? EstimatedAllWorldIntersections;
+    public WorldIntersection? HeadClosestWorldIntersection;
+    public WorldIntersection[]? HeadAllWorldIntersections;
+    public WorldIntersection? CalibrationGazeIntersection;
+    public WorldIntersection? TaggedGazeIntersection;
+    public WorldIntersection? LeftClosestWorldIntersection;
+    public WorldIntersection[]? LeftAllWorldIntersections;
+    public WorldIntersection? RightClosestWorldIntersection;
+    public WorldIntersection[]? RightAllWorldIntersections;
+    public WorldIntersection? FilteredLeftClosestWorldIntersection;
+    public WorldIntersection[]? FilteredLeftAllWorldIntersections;
+    public WorldIntersection? FilteredRightClosestWorldIntersection;
+    public WorldIntersection[]? FilteredRightAllWorldIntersections;
+    public WorldIntersection? EstimatedLeftClosestWorldIntersection;
+    public WorldIntersection[]? EstimatedLeftAllWorldIntersections;
+    public WorldIntersection? EstimatedRightClosestWorldIntersection;
+    public WorldIntersection[]? EstimatedRightAllWorldIntersections;
+    public WorldIntersection? FilteredEstimatedClosestWorldIntersection;
+    public WorldIntersection[]? FilteredEstimatedAllWorldIntersections;
+    public WorldIntersection? FilteredEstimatedLeftClosestWorldIntersection;
+    public WorldIntersection[]? FilteredEstimatedLeftAllWorldIntersections;
+    public WorldIntersection? FilteredEstimatedRightClosestWorldIntersection;
+    public WorldIntersection[]? FilteredEstimatedRightAllWorldIntersections;
 
     //Eyelid
     public double? EyelidOpening;
@@ -467,10 +442,10 @@ public record struct SEOutputData
     public double? LeftEyelidOpeningQ;
     public double? RightEyelidOpening;
     public double? RightEyelidOpeningQ;
-    public SEPoint3D? LeftLowerEyelidExtremePoint;
-    public SEPoint3D? LeftUpperEyelidExtremePoint;
-    public SEPoint3D? RightLowerEyelidExtremePoint;
-    public SEPoint3D? RightUpperEyelidExtremePoint;
+    public Point3D? LeftLowerEyelidExtremePoint;
+    public Point3D? LeftUpperEyelidExtremePoint;
+    public Point3D? RightLowerEyelidExtremePoint;
+    public Point3D? RightUpperEyelidExtremePoint;
     public byte? LeftEyelidState;
     public byte? RightEyelidState;
 
@@ -489,41 +464,41 @@ public record struct SEOutputData
     public double? FilteredRightPupilDiameterQ;
 
     //GPS Information
-    public SEPoint2D? GPSPosition;
+    public Point2D? GPSPosition;
     public double? GPSGroundSpeed;
     public double? GPSCourse;
     public ulong? GPSTime;
 
     //Raw Estimated Gaze
-    public SEPoint3D? EstimatedGazeOrigin;
-    public SEPoint3D? EstimatedLeftGazeOrigin;
-    public SEPoint3D? EstimatedRightGazeOrigin;
-    public SEPoint3D? EstimatedEyePosition;
-    public SEVect3D? EstimatedGazeDirection;
+    public Point3D? EstimatedGazeOrigin;
+    public Point3D? EstimatedLeftGazeOrigin;
+    public Point3D? EstimatedRightGazeOrigin;
+    public Point3D? EstimatedEyePosition;
+    public Vector3D? EstimatedGazeDirection;
     public double? EstimatedGazeDirectionQ;
     public double? EstimatedGazeHeading;
     public double? EstimatedGazePitch;
-    public SEPoint3D? EstimatedLeftEyePosition;
-    public SEVect3D? EstimatedLeftGazeDirection;
+    public Point3D? EstimatedLeftEyePosition;
+    public Vector3D? EstimatedLeftGazeDirection;
     public double? EstimatedLeftGazeDirectionQ;
     public double? EstimatedLeftGazeHeading;
     public double? EstimatedLeftGazePitch;
-    public SEPoint3D? EstimatedRightEyePosition;
-    public SEVect3D? EstimatedRightGazeDirection;
+    public Point3D? EstimatedRightEyePosition;
+    public Vector3D? EstimatedRightGazeDirection;
     public double? EstimatedRightGazeDirectionQ;
     public double? EstimatedRightGazeHeading;
     public double? EstimatedRightGazePitch;
 
     //Filtered Estimated Gaze
-    public SEVect3D? FilteredEstimatedGazeDirection;
+    public Vector3D? FilteredEstimatedGazeDirection;
     public double? FilteredEstimatedGazeDirectionQ;
     public double? FilteredEstimatedGazeHeading;
     public double? FilteredEstimatedGazePitch;
-    public SEVect3D? FilteredEstimatedLeftGazeDirection;
+    public Vector3D? FilteredEstimatedLeftGazeDirection;
     public double? FilteredEstimatedLeftGazeDirectionQ;
     public double? FilteredEstimatedLeftGazeHeading;
     public double? FilteredEstimatedLeftGazePitch;
-    public SEVect3D? FilteredEstimatedRightGazeDirection;
+    public Vector3D? FilteredEstimatedRightGazeDirection;
     public double? FilteredEstimatedRightGazeDirectionQ;
     public double? FilteredEstimatedRightGazeHeading;
     public double? FilteredEstimatedRightGazePitch;
@@ -534,17 +509,17 @@ public record struct SEOutputData
     public byte? ReflexReductionStateDEPRECATED;
 
     //Facial Feature Positions
-    public SEPoint3D? LeftEyeOuterCorner3D;
-    public SEPoint3D? LeftEyeInnerCorner3D;
-    public SEPoint3D? RightEyeInnerCorner3D;
-    public SEPoint3D? RightEyeOuterCorner3D;
-    public SEPoint3D? LeftNostril3D;
-    public SEPoint3D? RightNostril3D;
-    public SEPoint3D? LeftMouthCorner3D;
-    public SEPoint3D? RightMouthCorner3D;
-    public SEPoint3D? LeftEar3D;
-    public SEPoint3D? RightEar3D;
-    public SEPoint3D? NoseTip3D;
+    public Point3D? LeftEyeOuterCorner3D;
+    public Point3D? LeftEyeInnerCorner3D;
+    public Point3D? RightEyeInnerCorner3D;
+    public Point3D? RightEyeOuterCorner3D;
+    public Point3D? LeftNostril3D;
+    public Point3D? RightNostril3D;
+    public Point3D? LeftMouthCorner3D;
+    public Point3D? RightMouthCorner3D;
+    public Point3D? LeftEar3D;
+    public Point3D? RightEar3D;
+    public Point3D? NoseTip3D;
     public ushort[]? LeftEyeOuterCorner2D;
     public ushort[]? LeftEyeInnerCorner2D;
     public ushort[]? RightEyeInnerCorner2D;
@@ -592,4 +567,34 @@ public record struct SEOutputData
     public double? ExpressionLipStretch;
     public double? ExpressionJawDrop;
     public double? ExpressionQ;
+};
+
+// Assembly-only
+
+internal struct PacketHeader
+{
+    /// <summary>
+    /// Always 'SEPD'
+    /// </summary>
+    public uint SyncId;
+    /// <summary>
+    /// Always 4
+    /// </summary>
+    public ushort PacketType;
+    /// <summary>
+    /// Number of bytes following this header, that is, not including size of this header
+    /// </summary>
+    public ushort Length;
+};
+
+internal struct SubPacketHeader
+{
+    /// <summary>
+    /// Output data identifier, refer to <see cref="DataId"/> for existing ids
+    /// </summary>
+    public DataId Id;
+    /// <summary>
+    /// Number of bytes following this header
+    /// </summary>
+    public ushort Length;
 };

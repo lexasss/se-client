@@ -7,19 +7,21 @@ namespace SEClient.Tcp;
 
 public class Client : IDisposable
 {
-    public event EventHandler<SEOutputData>? Sample;
+    public event EventHandler<Data>? Sample;
+    public event EventHandler? Connected;
+    public event EventHandler? Disconnected;
 
     public Client()
     {
         _client = new TcpClient();
     }
 
-    public async Task<Exception?> Connect(string ip, int port)
+    public async Task<Exception?> Connect(string ip, int port, int timeout = 3000)
     {
         try
         {
             var cts = new CancellationTokenSource();
-            cts.CancelAfter(3000);
+            cts.CancelAfter(timeout);
 
             await _client.ConnectAsync(ip, port, cts.Token);
 
@@ -32,7 +34,7 @@ public class Client : IDisposable
         }
         catch (OperationCanceledException)
         {
-            return new Exception("Timeout");
+            return new TimeoutException($"Timeout in {timeout} ms.");
         }
 
         return null;
@@ -50,24 +52,28 @@ public class Client : IDisposable
 
     private void ReadInLoop()
     {
+        Connected?.Invoke(this, new EventArgs());
         NetworkStream stream = _client.GetStream();
 
         try
         {
             do
             {
-                SEPacketHeader header = Parser.ReadHeader(stream);
+                PacketHeader header = Parser.ReadHeader(stream);
                 if (header.Length == 0)
                     break;
 
-                var payload = Parser.ReadPayload(stream, header.Length);
-                Sample?.Invoke(this, payload);
+                var dataOrNull = Parser.ReadData(stream, header.Length);
+                if (dataOrNull is Data data)
+                {
+                    data.Size = header.Length;
+                    Sample?.Invoke(this, data);
+                }
 
             } while (true);
         }
-        catch (Exception ex)
-        {
-            Console.WriteLine("Exception: {0}", ex.Message);
-        }
+        catch { }
+
+        Disconnected?.Invoke(this, new EventArgs());
     }
 }

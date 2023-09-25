@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "TestTCP": {
+      "commandName": "Project",
+      "commandLineArgs": "192.168.1.239"
+    }
+  }
+}
