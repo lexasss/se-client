@@ -53,6 +53,7 @@ public class Client : IDisposable
     private void ReadInLoop()
     {
         Connected?.Invoke(this, new EventArgs());
+
         NetworkStream stream = _client.GetStream();
 
         try
@@ -61,7 +62,9 @@ public class Client : IDisposable
             {
                 PacketHeader header = Parser.ReadHeader(stream);
                 if (header.Length == 0)
+                {
                     break;
+                }
 
                 var dataOrNull = Parser.ReadData(stream, header.Length);
                 if (dataOrNull is Data data)
@@ -69,10 +72,16 @@ public class Client : IDisposable
                     data.Size = header.Length;
                     Sample?.Invoke(this, data);
                 }
+                else
+                {
+                    break;
+                }
 
             } while (true);
         }
         catch { }
+
+        stream.Dispose();
 
         Disconnected?.Invoke(this, new EventArgs());
     }
