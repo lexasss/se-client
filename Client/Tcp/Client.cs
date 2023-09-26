@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
@@ -7,7 +8,17 @@ namespace SEClient.Tcp;
 
 public class Client : IDisposable
 {
-    public event EventHandler<Data>? Sample;
+    public HashSet<Data.Id> Requested { get; } = new();
+
+    /// <summary>
+    /// This event will not fire if a handler to the <see cref="RequestAvailable"/> event is assigned already
+    /// and <see cref=" Requested"/> set has at least one ID
+    /// </summary>
+    public event EventHandler<Data.Sample>? Sample;
+    /// <summary>
+    /// This event fires only if all data requested in  <see cref="Requested"/> is available
+    /// </summary>
+    public event EventHandler<Dictionary<Data.Id, object>>? RequestAvailable;
     public event EventHandler? Connected;
     public event EventHandler? Disconnected;
 
@@ -66,15 +77,35 @@ public class Client : IDisposable
                     break;
                 }
 
-                var dataOrNull = Parser.ReadData(stream, header.Length);
-                if (dataOrNull is Data data)
+                if (Requested.Count > 0 && RequestAvailable is not null)
                 {
-                    data.Size = header.Length;
-                    Sample?.Invoke(this, data);
+                    var dict = Parser.ReadDataRequested(stream, header.Length, Requested);
+                    if (dict?.Count == Requested.Count)
+                    {
+                        RequestAvailable?.Invoke(this, dict);
+                    }
+                    else
+                    {
+                        break;
+                    }
                 }
-                else
+                else if (Sample is not null)
                 {
-                    break;
+                    var dataOrNull = Parser.ReadData(stream, header.Length);
+                    if (dataOrNull is Data.Sample sample)
+                    {
+                        sample.Size = header.Length;
+                        Sample?.Invoke(this, sample);
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+                else    // just read all data and forget immediately
+                {
+                    var buffer = new byte[header.Length];
+                    stream.Read(buffer);
                 }
 
             } while (true);

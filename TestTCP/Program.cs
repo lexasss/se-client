@@ -1,9 +1,10 @@
-﻿Console.WriteLine($@"Usage: .\Test.exe [ip=127.0.0.1] [port=5002]");
-Console.WriteLine($@"   example: > .\Test.exe 192.168.1.132");
+﻿Console.WriteLine($@"Usage:     .\TestTCP.exe [ip=127.0.0.1] [port=5002]");
+Console.WriteLine($@"Example: > .\TestTCP.exe 192.168.1.132");
 Console.WriteLine();
 
 using var tcpClient = new SEClient.Tcp.Client();
 
+/*
 tcpClient.Sample += (s, e) =>
 {
     Console.WriteLine($"Received data of {e.Size} bytes");
@@ -17,6 +18,18 @@ tcpClient.Sample += (s, e) =>
         Console.WriteLine($"Plane = {e.ClosestWorldIntersection?.ObjectName.AsString}");
     }
 };
+*/
+
+tcpClient.Requested.Add(SEClient.Tcp.Data.Id.LeftPupilDiameter);
+tcpClient.RequestAvailable += (s, e) =>
+{
+    object? pupilObj = e.GetValueOrDefault(SEClient.Tcp.Data.Id.LeftPupilDiameter);
+    if (pupilObj is double pupil)
+    {
+        Console.WriteLine($"Pupil = {pupil}");
+    }
+};
+
 
 // Parsing arguments
 
