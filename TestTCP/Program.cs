@@ -36,15 +36,15 @@ tcpClient.RequestAvailable += (s, e) =>
 string ip = "127.0.0.1";
 int port = 5002;
 
-void HandleArg(string arg)
+foreach (var arg in args)
 {
     if (ushort.TryParse(arg, out ushort argPort))
     {
         port = argPort;
     }
-    else if (arg.Split('.').Length == 4 && arg.Split('.').All(p => uint.TryParse(p, out uint val) && val < 255))
+    else if (arg.Split('.').Length == 4 && arg.Split('.').All(b => uint.TryParse(b, out uint val) && val < 255))
     {
-            ip = arg;
+        ip = arg;
     }
     else
     {
@@ -52,12 +52,8 @@ void HandleArg(string arg)
     }
 }
 
-if (args.Length > 0)
-    HandleArg(args[0]);
-if (args.Length > 1)
-    HandleArg(args[1]);
 
-// Conectring
+// Connecting
 
 Console.WriteLine($"Connecting to the SmartEye on {ip}:{port} . . .");
 
