@@ -92,6 +92,4 @@ public class Options
         member = value;
         Changed?.Invoke(this, new EventArgs());
     }
-
-    protected Options() { }
 }
