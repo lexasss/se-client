@@ -2,7 +2,7 @@
 using System.IO;
 using System.Text.Json;
 
-namespace SEClient.Cmd;
+namespace SEClient;
 
 public enum IntersectionSource
 {

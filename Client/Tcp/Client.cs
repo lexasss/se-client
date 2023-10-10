@@ -10,6 +10,8 @@ public class Client : IDisposable
 {
     public HashSet<Data.Id> Requested { get; } = new();
 
+    public bool IsConnected { get; private set; } = false;
+
     /// <summary>
     /// This event will not fire if a handler to the <see cref="RequestAvailable"/> event is assigned already
     /// and <see cref=" Requested"/> set has at least one ID
@@ -27,17 +29,24 @@ public class Client : IDisposable
         _client = new TcpClient();
     }
 
-    public async Task<Exception?> Connect(string ip, int port, int timeout = 3000)
+    public async Task<Exception?> Connect(string ip, int port, bool isDebugging = false, int timeout = 3000)
     {
+        if (_readingThread is not null)
+            return new Exception($"The client is connected already");
+
+        if (isDebugging)
+            return null;
+
         try
         {
             var cts = new CancellationTokenSource();
             cts.CancelAfter(timeout);
 
             await _client.ConnectAsync(ip, port, cts.Token);
+            IsConnected = true;
 
-            var readingThread = new Thread(ReadInLoop);
-            readingThread.Start();
+            _readingThread = new Thread(ReadInLoop);
+            _readingThread.Start();
         }
         catch (SocketException ex)
         {
@@ -51,6 +60,12 @@ public class Client : IDisposable
         return null;
     }
 
+    public async Task Stop()
+    {
+        IsConnected = false;
+        await Task.Run(() => _readingThread?.Join());
+    }
+
     public void Dispose()
     {
         _client.Dispose();
@@ -60,6 +75,8 @@ public class Client : IDisposable
     // Internal
 
     readonly TcpClient _client;
+
+    Thread? _readingThread;
 
     private void ReadInLoop()
     {
@@ -108,9 +125,12 @@ public class Client : IDisposable
                     stream.Read(buffer);
                 }
 
-            } while (true);
+            } while (IsConnected);
         }
         catch { }
+
+        IsConnected = false;    // Set it if the thread was closed internally by error
+        _readingThread = null;
 
         stream.Dispose();
 

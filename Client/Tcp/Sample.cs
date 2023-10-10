@@ -8,6 +8,12 @@ public struct Point2D
 {
     public double X;
     public double Y;
+    public double Distance(Point2D to)
+    {
+        double dx = X - to.X;
+        double dy = Y - to.Y;
+        return Math.Sqrt(dx * dx + dy * dy);
+    }
 };
 
 public struct Vector2D
@@ -324,7 +330,7 @@ public static class Data
         //0x0200 - 0x0202 cannot be used
     };
 
-    public static Dictionary<Id, Type> Type = new Dictionary<Id, Type>()
+    public static Dictionary<Id, Type> Type = new()
     {
         //Frame Information
         { Id.FrameNumber, typeof(uint) },
