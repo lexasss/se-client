@@ -5,7 +5,7 @@ using System.Windows;
 
 namespace SEClient.Cmd;
 
-public class DataSource
+public class DataSource : IDisposable
 {
     public event EventHandler<string>? Data;
     public event EventHandler? Closed;
@@ -60,12 +60,19 @@ public class DataSource
         }
     }
 
+    public void Dispose()
+    {
+        _cmd?.Dispose();
+        GC.SuppressFinalize(this);
+    }
+
     // Internal
 
     Process? _cmd;
 
     private void Cmd_Exited(object? sender, EventArgs e)
     {
+        _cmd?.Dispose();
         _cmd = null;
 
         Application.Current.Dispatcher.Invoke(() =>
