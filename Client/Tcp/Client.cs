@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.Sockets;
+using System.Printing;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -85,6 +87,16 @@ public class Client : IDisposable
         await Task.Run(() => _readingThread?.Join());
     }
 
+    public static void SetEmulatedPlanes(string[] planeNames)
+    {
+        var planes = new List<String>();
+        foreach (var planName in planeNames)
+        {
+            planes.Add(new String() { Ptr = planName.Split().Select(s => s[0]).ToArray(), Size = (ushort)planName.Length });
+        }
+        EmulatedPlanes = planes.ToArray();
+    }
+
     public void Dispose()
     {
         _client.Dispose();
@@ -92,6 +104,16 @@ public class Client : IDisposable
     }
 
     // Internal
+
+    static String[] EmulatedPlanes = new String[]
+    {
+            new String() { Ptr = new char[] { 'W', 'i', 'n', 'd', 's', 'h', 'i', 'e', 'l', 'd' }, Size = 10 },
+            new String() { Ptr = new char[] { 'L', 'e', 'f', 't', 'M', 'i', 'r', 'r', 'o', 'r' }, Size = 10 },
+            new String() { Ptr = new char[] { 'L', 'e', 'f', 't', 'D', 'a', 's', 'h', 'b', 'o', 'a', 'r', 'd' }, Size = 13 },
+            new String() { Ptr = new char[] { 'C', 'e', 'n', 't', 'r', 'a', 'l', 'C', 'o', 'n', 's', 'o', 'l', 'e' }, Size = 14 },
+            new String() { Ptr = new char[] { 'R', 'e', 'a', 'r', 'V', 'i', 'e', 'w' }, Size = 8 },
+            new String() { Ptr = new char[] { 'R', 'i', 'g', 'h', 't', 'M', 'i', 'r', 'r', 'o', 'r' }, Size = 11 },
+    };
 
     readonly TcpClient _client;
 
@@ -163,16 +185,6 @@ public class Client : IDisposable
         uint id = 0;
         String? currentPlane = null;
 
-        String[] emulatedPlanes = new String[]
-        {
-            new String() { Ptr = new char[] { 'W', 'i', 'n', 'd', 's', 'h', 'i', 'e', 'l', 'd' }, Size = 10 },
-            new String() { Ptr = new char[] { 'L', 'e', 'f', 't', 'M', 'i', 'r', 'r', 'o', 'r' }, Size = 10 },
-            new String() { Ptr = new char[] { 'L', 'e', 'f', 't', 'D', 'a', 's', 'h', 'b', 'o', 'a', 'r', 'd' }, Size = 13 },
-            new String() { Ptr = new char[] { 'C', 'e', 'n', 't', 'r', 'a', 'l', 'C', 'o', 'n', 's', 'o', 'l', 'e' }, Size = 14 },
-            new String() { Ptr = new char[] { 'R', 'e', 'a', 'r', 'V', 'i', 'e', 'w' }, Size = 8 },
-            new String() { Ptr = new char[] { 'R', 'i', 'g', 'h', 't', 'M', 'i', 'r', 'r', 'o', 'r' }, Size = 11 },
-        };
-
         Data.Sample GenerateSample()
         {
             if (currentPlane is not null)
@@ -186,7 +198,7 @@ public class Client : IDisposable
             }
             else
             {
-                currentPlane = emulatedPlanes[rnd.Next(emulatedPlanes.Length)];
+                currentPlane = EmulatedPlanes[rnd.Next(EmulatedPlanes.Length)];
                 var intersection = new WorldIntersection()
                 {
                     ObjectName = (String)currentPlane,
