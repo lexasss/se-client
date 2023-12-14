@@ -732,7 +732,10 @@ internal static class Parser
             Size = stringSize,
             Ptr = data[2..(2 + stringSize)].Select(b => (char)b).ToArray(),
         };
-        Debug.Assert(data.Length == result.StructSize);
+        // Next line fires warning when used in DecodeWorldIntersectionList,
+        // as it passes more data than needed, and there is no way to know in advance
+        // how long the string will be
+        //Debug.Assert(data.Length == result.StructSize);
         return result;
     }
 

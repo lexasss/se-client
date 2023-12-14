@@ -12,6 +12,8 @@ public class Client : IDisposable
 
     public bool IsConnected { get; private set; } = false;
 
+    public bool IsEmulated { get; private set; } = false;
+
     /// <summary>
     /// This event will not fire if a handler to the <see cref="RequestAvailable"/> event is assigned already
     /// and <see cref=" Requested"/> set has at least one ID
@@ -31,11 +33,18 @@ public class Client : IDisposable
 
     public async Task<Exception?> Connect(string ip, int port, bool isDebugging = false, int timeout = 3000)
     {
+        IsEmulated = isDebugging;
+
+        if (IsEmulated)
+        {
+            IsConnected = true;
+            Connected?.Invoke(this, EventArgs.Empty);
+            Task.Run(Emulate, _emulatorCancellationSource.Token);
+            return null;
+        }
+
         if (_readingThread is not null)
             return new Exception($"The client is connected already");
-
-        if (isDebugging)
-            return null;
 
         try
         {
@@ -63,6 +72,16 @@ public class Client : IDisposable
     public async Task Stop()
     {
         IsConnected = false;
+
+        if (IsEmulated)
+        {
+            _emulatorCancellationSource.Cancel();
+            _emulatorCancellationSource = new();
+
+            Disconnected?.Invoke(this, EventArgs.Empty);
+            return;
+        }
+
         await Task.Run(() => _readingThread?.Join());
     }
 
@@ -77,6 +96,7 @@ public class Client : IDisposable
     readonly TcpClient _client;
 
     Thread? _readingThread;
+    CancellationTokenSource _emulatorCancellationSource = new();
 
     private void ReadInLoop()
     {
@@ -135,5 +155,69 @@ public class Client : IDisposable
         stream.Dispose();
 
         Disconnected?.Invoke(this, new EventArgs());
+    }
+
+    private async void Emulate()
+    {
+        var rnd = new Random();
+        uint id = 0;
+        String? currentPlane = null;
+
+        String[] emulatedPlanes = new String[]
+        {
+            new String() { Ptr = new char[] { 'W', 'i', 'n', 'd', 's', 'h', 'i', 'e', 'l', 'd' }, Size = 10 },
+            new String() { Ptr = new char[] { 'L', 'e', 'f', 't', 'M', 'i', 'r', 'r', 'o', 'r' }, Size = 10 },
+            new String() { Ptr = new char[] { 'L', 'e', 'f', 't', 'D', 'a', 's', 'h', 'b', 'o', 'a', 'r', 'd' }, Size = 13 },
+            new String() { Ptr = new char[] { 'C', 'e', 'n', 't', 'r', 'a', 'l', 'C', 'o', 'n', 's', 'o', 'l', 'e' }, Size = 14 },
+            new String() { Ptr = new char[] { 'R', 'e', 'a', 'r', 'V', 'i', 'e', 'w' }, Size = 8 },
+            new String() { Ptr = new char[] { 'R', 'i', 'g', 'h', 't', 'M', 'i', 'r', 'r', 'o', 'r' }, Size = 11 },
+        };
+
+        Data.Sample GenerateSample()
+        {
+            if (currentPlane is not null)
+            {
+                currentPlane = null;
+                return new Data.Sample()
+                {
+                    FrameNumber = id,
+                    TimeStamp = (ulong)DateTime.Now.Ticks,
+                };
+            }
+            else
+            {
+                currentPlane = emulatedPlanes[rnd.Next(emulatedPlanes.Length)];
+                var intersection = new WorldIntersection()
+                {
+                    ObjectName = (String)currentPlane,
+                    ObjectPoint = new Point3D() { X = rnd.NextDouble(), Y = rnd.NextDouble(), Z = 0 },
+                    WorldPoint = new Point3D() { X = rnd.NextDouble(), Y = rnd.NextDouble(), Z = 0 },
+                };
+                return new Data.Sample()
+                {
+                    FrameNumber = id,
+                    TimeStamp = (ulong)DateTime.Now.Ticks,
+                    ClosestWorldIntersection = intersection,
+                    AllWorldIntersections = new WorldIntersection[] { intersection },
+                    FilteredClosestWorldIntersection = intersection,
+                    FilteredAllWorldIntersections = new WorldIntersection[] { intersection },
+                    EstimatedClosestWorldIntersection = intersection,
+                    EstimatedAllWorldIntersections = new WorldIntersection[] { intersection },
+                    FilteredEstimatedClosestWorldIntersection = intersection,
+                    FilteredEstimatedAllWorldIntersections = new WorldIntersection[] { intersection }
+                };
+            }
+        }
+
+        while (true)
+        {
+            await Task.Delay((int)(100 + rnd.NextDouble() * 200));
+            var sample = GenerateSample();  // gaze on a plane
+            Sample?.Invoke(this, sample);
+
+            await Task.Delay((int)(100 + rnd.NextDouble() * 5000));
+            sample = GenerateSample();     // gaze off a plane
+            Sample?.Invoke(this, sample);
+        }
     }
 }
