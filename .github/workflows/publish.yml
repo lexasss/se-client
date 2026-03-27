@@ -1,0 +1,50 @@
+name: Publish to NuGet
+
+on:
+  workflow_dispatch:   # manual trigger
+  push:
+    tags:
+      - 'v*'           # publish on version tags
+env:
+  PROJECT_PATH: Client/SmartEyeTools.csproj
+  PACKAGE_OUTPUT_DIR: ${{ github.workspace }}\packages
+  
+jobs:
+  publish:
+    runs-on: windows-latest
+
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restore NuGet packages
+        run: dotnet restore ${{ env.PROJECT_PATH }}
+
+      - name: Build project
+        run: dotnet build ${{ env.PROJECT_PATH }} --no-restore --configuration Release
+
+      - name: Build and pack the project
+        run: dotnet pack ${{ env.PROJECT_PATH }} --no-restore --no-build --configuration Release --output ${{ env.PACKAGE_OUTPUT_DIR }} # Create the nupkg
+
+      - name: List packages
+        run: ls ${{ env.PACKAGE_OUTPUT_DIR }}\*.nupkg
+        
+      # Get a short-lived NuGet API key
+      - name: NuGet login (OIDC → temp API key)
+        uses: NuGet/login@v1
+        id: login
+        with:
+          user: ${{ secrets.NUGET_USER }} # Recommended: use a secret like ${{ secrets.NUGET_USER }} for your nuget.org username (profile name), NOT your email address
+
+      - name: Publish to NuGet
+      #  run: dotnet nuget push ${{ env.PACKAGE_OUTPUT_DIR }}\*.nupkg --api-key "${{ secrets.NUGET_API_KEY }}" --source https://api.nuget.org/v3/index.json --skip-duplicate
+        run: dotnet nuget push ${{ env.PACKAGE_OUTPUT_DIR }}\*.nupkg --api-key "${{ steps.login.outputs.NUGET_API_KEY }}" --source https://api.nuget.org/v3/index.json --skip-duplicate
