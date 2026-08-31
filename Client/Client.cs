@@ -39,7 +39,7 @@ public class Client : IDisposable
         {
             IsConnected = true;
             Connected?.Invoke(this, EventArgs.Empty);
-            Task.Run(Emulate, _emulatorCancellationSource.Token);
+            _ = Task.Run(Emulate, _emulatorCancellationSource.Token);
             return null;
         }
 
@@ -162,7 +162,7 @@ public class Client : IDisposable
                 else    // just read all data and forget immediately
                 {
                     var buffer = new byte[header.Length];
-                    stream.Read(buffer);
+                    _ = stream.Read(buffer);
                 }
 
             } while (IsConnected);
